@@ -1,0 +1,10 @@
+{
+	"name": "synapse-ws-sqlOnDemand--wcc-nprd-uks-dwheval-synapse-002",
+	"properties": {
+		"privateLinkResourceId": "/subscriptions/cd617699-6140-4970-a79b-13e2d65bd2ec/resourceGroups/wcc-nprd-uks-dwh-datafactory-rg/providers/Microsoft.Synapse/workspaces/wcc-nprd-uks-dwheval-synapse-002",
+		"groupId": "sqlOnDemand",
+		"fqdns": [
+			"wcc-nprd-uks-dwheval-synapse-002-ondemand.631a9518-43bd-45a3-b55f-e43ed84e6c66.sql.azuresynapse.net"
+		]
+	}
+}

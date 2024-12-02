@@ -1,0 +1,10 @@
+{
+	"name": "synapse-ws-custstgacct--wcc-nprd-uks-dwheval-synapse-002-wccnprduksdwhstorage002",
+	"properties": {
+		"privateLinkResourceId": "/subscriptions/cd617699-6140-4970-a79b-13e2d65bd2ec/resourceGroups/wcc-nprd-uks-dwh-datafactory-rg/providers/Microsoft.Storage/storageAccounts/wccnprduksdwhstorage002",
+		"groupId": "dfs",
+		"fqdns": [
+			"wccnprduksdwhstorage002.dfs.core.windows.net"
+		]
+	}
+}
