@@ -1,0 +1,17 @@
+{
+	"name": "SQL script 1",
+	"properties": {
+		"content": {
+			"query": "CREATE USER [david.dando-moore@officesharedservice.onmicrosoft.com] FROM EXTERNAL PROVIDER;\nEXEC sp_addrolemember 'db_ddladmin', 'david.dando-moore@officesharedservice.onmicrosoft.com'; \n\nCREATE USER [jon.beeby@officesharedservice.onmicrosoft.com] FROM EXTERNAL PROVIDER;\nEXEC sp_addrolemember 'db_ddladmin', 'jon.beeby@officesharedservice.onmicrosoft.com'; \n\n\nCREATE USER [emma.sheppard@officesharedservice.onmicrosoft.com] FROM EXTERNAL PROVIDER;\nEXEC sp_addrolemember 'db_ddladmin', 'emma.sheppard@officesharedservice.onmicrosoft.com'; \n\nCREATE USER [ragunath.dodalla@officesharedservice.onmicrosoft.com] FROM EXTERNAL PROVIDER;\nEXEC sp_addrolemember 'db_ddladmin', 'ragunath.dodalla@officesharedservice.onmicrosoft.com'; \n\n\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "WCC_DWH_GOLD",
+				"poolName": "WCC_DWH_GOLD"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
