@@ -1,0 +1,263 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"workspaceName": {
+			"type": "string",
+			"metadata": "Workspace name",
+			"defaultValue": "wcc-nprd-uks-dwheval-synapse-002"
+		},
+		"wcc-nprd-uks-dwheval-synapse-002-WorkspaceDefaultSqlServer_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'wcc-nprd-uks-dwheval-synapse-002-WorkspaceDefaultSqlServer'",
+			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=tcp:wcc-nprd-uks-dwheval-synapse-002.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
+		},
+		"wcc-nprd-uks-dwheval-synapse-002-WorkspaceDefaultStorage_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://wccnprduksdwhstorage002.dfs.core.windows.net"
+		}
+	},
+	"variables": {
+		"workspaceId": "[concat('Microsoft.Synapse/workspaces/', parameters('workspaceName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('workspaceName'), '/wcc-nprd-uks-dwheval-synapse-002-WorkspaceDefaultSqlServer')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"parameters": {
+					"DBName": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlDW",
+				"typeProperties": {
+					"connectionString": "[parameters('wcc-nprd-uks-dwheval-synapse-002-WorkspaceDefaultSqlServer_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/wcc-nprd-uks-dwheval-synapse-002-WorkspaceDefaultStorage')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('wcc-nprd-uks-dwheval-synapse-002-WorkspaceDefaultStorage_properties_typeProperties_url')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AutoResolveIntegrationRuntime')]",
+			"type": "Microsoft.Synapse/workspaces/integrationRuntimes",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "Managed",
+				"typeProperties": {
+					"computeProperties": {
+						"location": "AutoResolve",
+						"dataFlowProperties": {
+							"computeType": "General",
+							"coreCount": 8,
+							"timeToLive": 0
+						}
+					}
+				},
+				"managedVirtualNetwork": {
+					"type": "ManagedVirtualNetworkReference",
+					"referenceName": "default"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/managedVirtualNetworks/default')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/DWHEvalSynapseIntegrationRuntime')]",
+			"type": "Microsoft.Synapse/workspaces/integrationRuntimes",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "Managed",
+				"typeProperties": {
+					"computeProperties": {
+						"location": "AutoResolve",
+						"dataFlowProperties": {
+							"computeType": "General",
+							"coreCount": 8,
+							"timeToLive": 10,
+							"cleanup": false,
+							"customProperties": []
+						},
+						"pipelineExternalComputeScaleProperties": {
+							"timeToLive": 60,
+							"numberOfPipelineNodes": 1,
+							"numberOfExternalNodes": 1
+						}
+					}
+				},
+				"managedVirtualNetwork": {
+					"type": "ManagedVirtualNetworkReference",
+					"referenceName": "default"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/managedVirtualNetworks/default')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/WorkspaceSystemIdentity')]",
+			"type": "Microsoft.Synapse/workspaces/credentials",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "ManagedIdentity",
+				"typeProperties": {}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/default')]",
+			"type": "Microsoft.Synapse/workspaces/managedVirtualNetworks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 1')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE USER [david.dando-moore@officesharedservice.onmicrosoft.com] FROM EXTERNAL PROVIDER;\nEXEC sp_addrolemember 'db_ddladmin', 'david.dando-moore@officesharedservice.onmicrosoft.com'; \n\nCREATE USER [jon.beeby@officesharedservice.onmicrosoft.com] FROM EXTERNAL PROVIDER;\nEXEC sp_addrolemember 'db_ddladmin', 'jon.beeby@officesharedservice.onmicrosoft.com'; \n\n\nCREATE USER [emma.sheppard@officesharedservice.onmicrosoft.com] FROM EXTERNAL PROVIDER;\nEXEC sp_addrolemember 'db_ddladmin', 'emma.sheppard@officesharedservice.onmicrosoft.com'; \n\nCREATE USER [ragunath.dodalla@officesharedservice.onmicrosoft.com] FROM EXTERNAL PROVIDER;\nEXEC sp_addrolemember 'db_ddladmin', 'ragunath.dodalla@officesharedservice.onmicrosoft.com'; \n\n\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "WCC_DWH_GOLD",
+						"poolName": "WCC_DWH_GOLD"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 2')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "CREATE TABLE [dbo].[fact_healthdeprivation_2]\n(\n\t[RowID] [int] NOT NULL,\n\t[datetime] [datetime2](7) NOT NULL,\n\t[value] [decimal](15, 10) NOT NULL,\n\t[measure_id] [int] NOT NULL,\n\t[sensor_id] [int] NOT NULL,\n\t[source_id] [int] NOT NULL,\n\t[Batchrunid] [int] NOT NULL,\n\t[RowStartTime] [datetime2](7) NOT NULL,\n\t[RowEndTime] [datetime2](7) NOT NULL,\n\t[RowChangeDateTime] [datetime2](7) NOT NULL,\n\t[ActiveRecord] [int] NOT NULL\n)\nWITH\n(\n\tDISTRIBUTION = HASH ( [measure_id] ),\n\tCLUSTERED COLUMNSTORE INDEX\n)\nGO\n\nCREATE TABLE [wh].[dft_biasadjdata_t]\n(\n\t[rowid] [int] NOT NULL,\n\t[sensor_id] [nvarchar](200) NOT NULL,\n\t[datasource] [nvarchar](200) NULL,\n\t[year] [int] NOT NULL,\n\t[validdatacaptureformonitoringperiod] [decimal](15, 10) NULL,\n\t[validdatacaptureforyear] [decimal](15, 10) NULL,\n\t[nationalbiasadjustedannualmean] [decimal](15, 10) NULL,\n\t[localbiasadjustedannualmean] [decimal](15, 10) NULL,\n\t[notes] [nvarchar](1000) NULL,\n\t[batchrunid] [int] NULL,\n\t[rowchangedatetime] [datetime2](7) NULL\n)\nWITH\n(\n\tDISTRIBUTION = ROUND_ROBIN,\n\tCLUSTERED COLUMNSTORE INDEX\n)\nGO\n\nCREATE TABLE [wh].[dim_text_measures]\n(\n\t[RowID] [int] NOT NULL,\n\t[measure_key] [nvarchar](100) NOT NULL,\n\t[source] [nvarchar](50) NOT NULL,\n\t[measure_text] [nvarchar](25) NOT NULL,\n\t[Batchrunid] [int] NOT NULL,\n\t[RowStartTime] [datetime2](7) NOT NULL,\n\t[RowEndTime] [datetime2](7) NOT NULL,\n\t[RowChangeDateTime] [datetime2](7) NOT NULL,\n\t[ActiveRecord] [int] NOT NULL\n)\nWITH\n(\n\tDISTRIBUTION = ROUND_ROBIN,\n\tCLUSTERED COLUMNSTORE INDEX\n)\nGO\n\nCREATE TABLE [wh].[fact_londonairquality_aqi]\n(\n\t[RowID] [int] NOT NULL,\n\t[datetime] [datetime2](7) NOT NULL,\n\t[value] [decimal](15, 10) NOT NULL,\n\t[measure_id] [int] NOT NULL,\n\t[sensor_id] [int] NOT NULL,\n\t[source_id] [int] NOT NULL,\n\t[Batchrunid] [int] NOT NULL,\n\t[RowStartTime] [datetime2](7) NOT NULL,\n\t[RowEndTime] [datetime2](7) NOT NULL,\n\t[RowChangeDateTime] [datetime2](7) NOT NULL,\n\t[ActiveRecord] [int] NOT NULL\n)\nWITH\n(\n\tDISTRIBUTION = HASH ( [measure_id] ),\n\tCLUSTERED COLUMNSTORE INDEX\n)\nGO\n\n\n\nCREATE VIEW [wh].[fact_airquality_measurements]\nAS WITH breathelondon AS (\n\tSELECT\n\t[wh].[fnUtcTimestampToDstDatetime]([datetime]) AS datetime\n\t,[value]\n\t,[measure_id]\n\t,[sensor_id]\n\t,[source_id]\n\t,-1 AS [Text Measure ID]\n\t,month([wh].[fnUtcTimestampToDstDatetime]([datetime])) AS [month]\n\t,year([wh].[fnUtcTimestampToDstDatetime]([datetime]))  AS [year]\n\t,NULL AS validdatacaptureformonitoringperiod\n    ,NULL AS validdatacaptureforyear\n    ,NULL AS nationalbiasadjustedannualmean\n    ,NULL AS localbiasadjustedannualmean\n    ,NULL AS notes\n\tFROM wh.fact_breathelondon_clarity\n\tWHERE ActiveRecord = 1\n)\n,londonairquality AS (\n\tSELECT\n\t[wh].[fnUtcTimestampToDstDatetime]([datetime]) AS datetime\n\t,[value]\n\t,[measure_id]\n\t,[sensor_id]\n\t,[source_id]\n\t,-1 AS [Text Measure ID]\n\t,month([wh].[fnUtcTimestampToDstDatetime]([datetime])) AS [month]\n\t,year([wh].[fnUtcTimestampToDstDatetime]([datetime]))  AS [year]\t\n\t,NULL AS validdatacaptureformonitoringperiod\n    ,NULL AS validdatacaptureforyear\n    ,NULL AS nationalbiasadjustedannualmean\n    ,NULL AS localbiasadjustedannualmean\n    ,NULL AS notes\n\tFROM wh.fact_londonairquality_measurements\n\tWHERE ActiveRecord = 1\n)\n,londonairquality_aqi AS (\n\tSELECT\n\t[wh].[fnUtcTimestampToDstDatetime]([datetime]) AS datetime\n\t,[value]\n\t,[measure_id]\n\t,[sensor_id]\n\t,[source_id]\n\t,c.RowId AS [Text Measure ID]\n\t,month([wh].[fnUtcTimestampToDstDatetime]([datetime])) AS [month]\n\t,year([wh].[fnUtcTimestampToDstDatetime]([datetime]))  AS [year]\n\t,NULL AS validdatacaptureformonitoringperiod\n    ,NULL AS validdatacaptureforyear\n    ,NULL AS nationalbiasadjustedannualmean\n    ,NULL AS localbiasadjustedannualmean\n    ,NULL AS notes\n\tFROM wh.fact_londonairquality_aqi a\n\tLEFT JOIN wh.dim_source b\n\tON a.source_id = b.RowId\n\tLEFT JOIN wh.dim_text_measures c\n\tON CONCAT('London Air Quality ', value) = c.measure_key\n\tWHERE a.ActiveRecord = 1\n)\n,diffusiontubes AS (\n\tSELECT\n\t[wh].[fnUtcTimestampToDstDatetime]([datetime]) AS datetime\n\t,f.value\n\t,f.measure_id\n\t,f.sensor_id\n\t,f.source_id\n\t,-1 AS [Text Measure ID]\n\t,f.dft_month as [month]\n\t,f.dft_year as [year]\n    ,adj.validdatacaptureformonitoringperiod AS validdatacaptureformonitoringperiod\n    ,adj.validdatacaptureforyear AS validdatacaptureforyear\n    ,adj.nationalbiasadjustedannualmean AS nationalbiasadjustedannualmean\n    ,adj.localbiasadjustedannualmean AS localbiasadjustedannualmean\n    ,adj.notes AS notes\n\tFROM [wh].[fact_diffusiontubesurvey] f\n\tLEFT JOIN \n\t(SELECT s.RowId AS sensor_id\n        ,adj.datasource AS datasource\n        ,adj.year AS year\n        ,adj.validdatacaptureformonitoringperiod AS validdatacaptureformonitoringperiod\n        ,adj.validdatacaptureforyear AS validdatacaptureforyear\n        ,adj.nationalbiasadjustedannualmean AS nationalbiasadjustedannualmean\n        ,adj.localbiasadjustedannualmean AS localbiasadjustedannualmean\n        ,adj.notes AS notes\n    FROM wh.dft_biasadjdata_t adj\n\tINNER JOIN wh.dim_sensors s\n       ON adj.sensor_id = s.sensor_id\n      AND s.ActiveRecord = 1) adj\n       ON f.sensor_id = adj.sensor_id\n\t  AND f.dft_year  = adj.year\n    WHERE f.ActiveRecord = 1\n)\n,healthdeprivation AS (\n\tSELECT\n\t[wh].[fnUtcTimestampToDstDatetime]([datetime]) AS datetime\n\t,[value]\n\t,[measure_id]\n\t,[sensor_id]\n\t,[source_id]\n\t,-1 AS [Text Measure ID]\n\t,month([wh].[fnUtcTimestampToDstDatetime]([datetime])) AS [month]\n\t,year([wh].[fnUtcTimestampToDstDatetime]([datetime]))  AS [year]\t\n\t,NULL AS validdatacaptureformonitoringperiod\n    ,NULL AS validdatacaptureforyear\n    ,NULL AS nationalbiasadjustedannualmean\n    ,NULL AS localbiasadjustedannualmean\n    ,NULL AS notes\n\tFROM [wh].[fact_healthdeprivation]\n\tWHERE ActiveRecord = 1\n)\n,earthsense AS (\n\tSELECT\n\t[wh].[fnUtcTimestampToDstDatetime]([datetime]) AS datetime\n\t,[value]\n\t,[measure_id]\n\t,[sensor_id]\n\t,[source_id]\n\t,-1 AS [Text Measure ID]\n\t,month([wh].[fnUtcTimestampToDstDatetime]([datetime])) AS [month]\n\t,year([wh].[fnUtcTimestampToDstDatetime]([datetime]))  AS [year]\t\n\t,NULL AS validdatacaptureformonitoringperiod\n    ,NULL AS validdatacaptureforyear\n    ,NULL AS nationalbiasadjustedannualmean\n    ,NULL AS localbiasadjustedannualmean\n    ,NULL AS notes\n\tFROM [wh].[fact_earthsense_measurements]\n\tWHERE ActiveRecord = 1\n)\n--,union_facts AS (\n\tSELECT\n\tdatetime AS [Datetime]\n\t,CAST(datetime AS date) AS [Date]\n\t,CAST(datetime AS time) AS [Time]\n\t,[value] AS [Value]\n\t,[measure_id] AS [Measure ID]\n\t,[sensor_id] AS [Sensor ID]\n\t,[source_id] AS [Source ID]\n\t,[Text Measure ID]\n\t,[month] AS [Month]\n\t,[year] AS [Year]\n\t,[validdatacaptureformonitoringperiod] AS [validdatacaptureformonitoringperiod]\n    ,[validdatacaptureforyear] AS [validdatacaptureforyear]\n    ,[nationalbiasadjustedannualmean] AS [nationalbiasadjustedannualmean]\n    ,[localbiasadjustedannualmean] AS [localbiasadjustedannualmean]\n    ,[notes] AS [notes]\n\tFROM breathelondon\n\tUNION ALL\n\tSELECT\n\tdatetime AS [Datetime]\n\t,CAST(datetime AS date) AS [Date]\n\t,CAST(datetime AS time) AS [Time]\n\t,[value] AS [Value]\n\t,[measure_id] AS [Measure ID]\n\t,[sensor_id] AS [Sensor ID]\n\t,[source_id] AS [Source ID]\n\t,[Text Measure ID]\n\t,[month] AS [Month]\n\t,[year] AS [Year]\t\n\t,[validdatacaptureformonitoringperiod] AS [validdatacaptureformonitoringperiod]\n    ,[validdatacaptureforyear] AS [validdatacaptureforyear]\n    ,[nationalbiasadjustedannualmean] AS [nationalbiasadjustedannualmean]\n    ,[localbiasadjustedannualmean] AS [localbiasadjustedannualmean]\n    ,[notes] AS [notes]\n\tFROM londonairquality\n\tUNION ALL\n\tSELECT\n\tdatetime AS [Datetime]\n\t,CAST(datetime AS date) AS [Date]\n\t,CAST(datetime AS time) AS [Time]\n\t,[value] AS [Value]\n\t,[measure_id] AS [Measure ID]\n\t,[sensor_id] AS [Sensor ID]\n\t,[source_id] AS [Source ID]\n\t,[Text Measure ID]\n\t,[month] AS [Month]\n\t,[year] AS [Year]\t\n\t,[validdatacaptureformonitoringperiod] AS [validdatacaptureformonitoringperiod]\n    ,[validdatacaptureforyear] AS [validdatacaptureforyear]\n    ,[nationalbiasadjustedannualmean] AS [nationalbiasadjustedannualmean]\n    ,[localbiasadjustedannualmean] AS [localbiasadjustedannualmean]\n    ,[notes] AS [notes]\n\tFROM londonairquality_aqi\n\tUNION ALL\n\tSELECT\n\tdatetime AS [Datetime]\n\t,CAST(datetime AS date) AS [Date]\n\t,CAST(datetime AS time) AS [Time]\n\t,[value] AS [Value]\n\t,[measure_id] AS [Measure ID]\n\t,[sensor_id] AS [Sensor ID]\n\t,[source_id] AS [Source ID]\n\t,[Text Measure ID]\n\t,[month] AS [Month]\n\t,[year] AS [Year]\t\n\t,[validdatacaptureformonitoringperiod] AS [validdatacaptureformonitoringperiod]\n    ,[validdatacaptureforyear] AS [validdatacaptureforyear]\n    ,[nationalbiasadjustedannualmean] AS [nationalbiasadjustedannualmean]\n    ,[localbiasadjustedannualmean] AS [localbiasadjustedannualmean]\n    ,[notes] AS [notes]\n\tFROM diffusiontubes\n\tUNION ALL\n\tSELECT\n\tdatetime AS [Datetime]\n\t,CAST(datetime AS date) AS [Date]\n\t,CAST(datetime AS time) AS [Time]\n\t,[value] AS [Value]\n\t,[measure_id] AS [Measure ID]\n\t,[sensor_id] AS [Sensor ID]\n\t,[source_id] AS [Source ID]\n\t,[Text Measure ID]\n\t,[month] AS [Month]\n\t,[year] AS [Year]\t\n\t,[validdatacaptureformonitoringperiod] AS [validdatacaptureformonitoringperiod]\n    ,[validdatacaptureforyear] AS [validdatacaptureforyear]\n    ,[nationalbiasadjustedannualmean] AS [nationalbiasadjustedannualmean]\n    ,[localbiasadjustedannualmean] AS [localbiasadjustedannualmean]\n    ,[notes] AS [notes]\n\tFROM healthdeprivation\n\tUNION ALL\n\tSELECT\n\tdatetime AS [Datetime]\n\t,CAST(datetime AS date) AS [Date]\n\t,CAST(datetime AS time) AS [Time]\n\t,[value] AS [Value]\n\t,[measure_id] AS [Measure ID]\n\t,[sensor_id] AS [Sensor ID]\n\t,[source_id] AS [Source ID]\n\t,[Text Measure ID]\n\t,[month] AS [Month]\n\t,[year] AS [Year]\t\n\t,[validdatacaptureformonitoringperiod] AS [validdatacaptureformonitoringperiod]\n    ,[validdatacaptureforyear] AS [validdatacaptureforyear]\n    ,[nationalbiasadjustedannualmean] AS [nationalbiasadjustedannualmean]\n    ,[localbiasadjustedannualmean] AS [localbiasadjustedannualmean]\n    ,[notes] AS [notes]\n\tFROM earthsense;\nGO\n\n\nCREATE FUNCTION [wh].[fnUtcTimestampToDstDatetime] (@inputTimestamp [NVARCHAR](24)) RETURNS DATETIME2\nAS\nBEGIN\n\tRETURN \n\tCASE \n\t\tWHEN \n\t\t\tCAST(@inputTimestamp AS datetime2) >= CAST('2021-03-28T00:00:00.000Z' AS datetime2)\n\t\t\tAND CAST(@inputTimestamp AS datetime2) < CAST('2021-10-31T02:00:00.000Z' AS datetime2)\n\t\tTHEN DATEADD(HOUR, 1, CAST(@inputTimestamp AS datetime2))\n        WHEN \n            CAST(@inputTimestamp AS datetime2) >= CAST('2022-03-27T00:00:00.000Z' AS datetime2)\n            AND CAST(@inputTimestamp AS datetime2) < CAST('2022-10-30T02:00:00.000Z' AS datetime2)\n        THEN DATEADD(HOUR, 1, CAST(@inputTimestamp AS datetime2))\n\t\tWHEN \n            CAST(@inputTimestamp AS datetime2) >= CAST('2023-03-26T00:00:00.000Z' AS datetime2)\n            AND CAST(@inputTimestamp AS datetime2) < CAST('2023-10-29T02:00:00.000Z' AS datetime2)\n        THEN DATEADD(HOUR, 1, CAST(@inputTimestamp AS datetime2))\n        ELSE CAST(@inputTimestamp AS datetime2)\n\tEND\n\nEND\nGO",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "WCC_DWH_BRONZE",
+						"poolName": "WCC_DWH_BRONZE"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/WCC_DWH_SILVER')]",
+			"type": "Microsoft.Synapse/workspaces/sqlPools",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"collation": "SQL_Latin1_General_CP1_CI_AS",
+				"maxSizeBytes": 263882790666240,
+				"annotations": []
+			},
+			"dependsOn": [],
+			"location": "uksouth"
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/WCC_DWH_BRONZE')]",
+			"type": "Microsoft.Synapse/workspaces/sqlPools",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"collation": "SQL_Latin1_General_CP1_CI_AS",
+				"maxSizeBytes": 263882790666240,
+				"annotations": []
+			},
+			"dependsOn": [],
+			"location": "uksouth"
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/WCC_DWH_GOLD')]",
+			"type": "Microsoft.Synapse/workspaces/sqlPools",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"collation": "SQL_Latin1_General_CP1_CI_AS",
+				"maxSizeBytes": 263882790666240,
+				"annotations": []
+			},
+			"dependsOn": [],
+			"location": "uksouth"
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/default/synapse-ws-custstgacct--wcc-nprd-uks-dwheval-synapse-002-wccnprduksdwhstorage002')]",
+			"type": "Microsoft.Synapse/workspaces/managedVirtualNetworks/managedPrivateEndpoints",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"privateLinkResourceId": "/subscriptions/cd617699-6140-4970-a79b-13e2d65bd2ec/resourceGroups/wcc-nprd-uks-dwh-datafactory-rg/providers/Microsoft.Storage/storageAccounts/wccnprduksdwhstorage002",
+				"groupId": "dfs",
+				"fqdns": [
+					"wccnprduksdwhstorage002.dfs.core.windows.net"
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/managedVirtualNetworks/default')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/default/synapse-ws-sql--wcc-nprd-uks-dwheval-synapse-002')]",
+			"type": "Microsoft.Synapse/workspaces/managedVirtualNetworks/managedPrivateEndpoints",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"privateLinkResourceId": "/subscriptions/cd617699-6140-4970-a79b-13e2d65bd2ec/resourceGroups/wcc-nprd-uks-dwh-datafactory-rg/providers/Microsoft.Synapse/workspaces/wcc-nprd-uks-dwheval-synapse-002",
+				"groupId": "sql",
+				"fqdns": [
+					"wcc-nprd-uks-dwheval-synapse-002.631a9518-43bd-45a3-b55f-e43ed84e6c66.sql.azuresynapse.net"
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/managedVirtualNetworks/default')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/default/synapse-ws-sqlOnDemand--wcc-nprd-uks-dwheval-synapse-002')]",
+			"type": "Microsoft.Synapse/workspaces/managedVirtualNetworks/managedPrivateEndpoints",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"privateLinkResourceId": "/subscriptions/cd617699-6140-4970-a79b-13e2d65bd2ec/resourceGroups/wcc-nprd-uks-dwh-datafactory-rg/providers/Microsoft.Synapse/workspaces/wcc-nprd-uks-dwheval-synapse-002",
+				"groupId": "sqlOnDemand",
+				"fqdns": [
+					"wcc-nprd-uks-dwheval-synapse-002-ondemand.631a9518-43bd-45a3-b55f-e43ed84e6c66.sql.azuresynapse.net"
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/managedVirtualNetworks/default')]"
+			]
+		}
+	]
+}
